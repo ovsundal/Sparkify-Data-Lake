@@ -23,28 +23,32 @@ def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
     song_data = get_files('data/song_data')
     # read song data file
+    df = spark.read.json(song_data)
 
-    df = spark.read.text(song_data)
+    # pd.set_option('max_colwidth', 400)
+    # print(df.limit(5).toPandas())
 
-    pd.set_option('max_colwidth', 200)
-    print(df.limit(5).toPandas())
-
-    # df.createOrReplaceTempView("songs_table")
+    df.createOrReplaceTempView("songs_table")
+    df.printSchema()
+    # df.show(5, False)
 
     # extract columns to create songs table
-    # songs_table = df.withColumn("num_songs")
+    # songs_table = df.withColumn("num_songs", "number of songs")
     # songs_table.printSchema()
 
-    # songs_table = spark.sql(
-    # """
-    # SELECT *
-    # FROM songs_table
-    # """
-    # ).show()
+    songs_table = \
+    spark.sql(
+    """
+    SELECT song_id, title, artist_id, year, duration
+    FROM songs_table
+    """
+    ).show(10, False)
 
     # write songs table to parquet files partitioned by year and artist
-    # songs_table
+    df.dropna().write.partitionBy("year", "artist_id").parquet('songs_table')
+    dim_songs = spark.read.parquet('songs_table')
 
+    # songs_table.write.parquet("dim_songs.parquet")
     # extract columns to create artists table
     # artists_table =
 
