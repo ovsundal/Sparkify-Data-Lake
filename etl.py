@@ -67,24 +67,33 @@ def get_files(filepath):
     return all_files
 
 
-# def process_log_data(spark, input_data, output_data):
-#     # get filepath to log data file
-#     log_data = 's3a://udacity-dend/log_data'
-#
-#     # read log data file
-#     df =
-#
-#     # filter by actions for song plays
-#     df =
-#
-#     # extract columns for users table
-#     artists_table =
-#
-#     # write users table to parquet files
-#     artists_table
-#
-#     # create timestamp column from original timestamp column
-#     get_timestamp = udf()
+def process_log_data(spark, input_data, output_data):
+    # get filepath to log data file
+    log_data = get_files('data/log_data')
+
+    # read log data file
+    df = spark.read.json(log_data)
+    df.printSchema()
+    # filter by actions for song plays
+    df = df[df['page'] == 'NextSong']
+
+    # USER TABLE
+    # extract columns for users table
+    df.createOrReplaceTempView("users_table")
+    columns = ['userId', 'firstName', 'lastName', 'gender', 'level']
+
+    # write users table to parquet files
+    users_table = spark.sql(
+        """
+    SELECT userId, firstName, lastName, gender, level
+    FROM users_table
+    """).toDF(*columns)
+
+    users_table.write.parquet(os.path.join(output_data, "users.parquet"), "overwrite")
+
+    # TIME TABLE
+    # create timestamp column from original timestamp column
+    # get_timestamp = udf()
 #     df =
 #
 #     # create datetime column from original timestamp column
@@ -112,8 +121,8 @@ def main():
     input_data = "s3a://udacity-dend/"
     output_data = ""
 
-    process_song_data(spark, input_data, output_data)
-    # process_log_data(spark, input_data, output_data)
+    # process_song_data(spark, input_data, output_data)
+    process_log_data(spark, input_data, output_data)
 
 
 if __name__ == "__main__":
