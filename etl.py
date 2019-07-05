@@ -1,9 +1,13 @@
 import configparser
 import os
 import glob
+
+from datetime import datetime
 from pyspark.sql import SparkSession
 import pandas as pd
 import shutil
+
+from pyspark.sql.functions import udf
 
 config = configparser.ConfigParser()
 config.read('dl.cfg')
@@ -92,16 +96,21 @@ def process_log_data(spark, input_data, output_data):
     users_table.write.parquet(os.path.join(output_data, "users.parquet"), "overwrite")
 
     # TIME TABLE
+    df.createOrReplaceTempView("time_table")
     # create timestamp column from original timestamp column
-    # get_timestamp = udf()
-#     df =
-#
-#     # create datetime column from original timestamp column
-#     get_datetime = udf()
+    get_timestamp = udf(lambda x: datetime.fromtimestamp(x / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
+    df = df.withColumn('timestamp', get_timestamp(df['ts'])).show(5)
+
+    # create datetime column from original timestamp column
+    # get_datetime = udf()
 #     df =
 #
 #     # extract columns to create time table
-#     time_table =
+    time_table = spark.sql(
+"""
+    SELECT timestamp
+    FROM time_table
+""").show(5)
 #
 #     # write time table to parquet files partitioned by year and month
 #     time_table
