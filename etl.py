@@ -26,11 +26,10 @@ def process_song_data(spark, input_data, output_data):
     song_data = get_files('data/song_data')
     # read song data file
     df = spark.read.json(song_data)
-
-    df.createOrReplaceTempView("songs_table")
     df.printSchema()
 
     # SONGS TABLE
+    df.createOrReplaceTempView("songs_table")
     columns = ['song_id', 'title', 'artist_id', 'year', 'duration']
 
     songs_table = \
@@ -39,16 +38,24 @@ def process_song_data(spark, input_data, output_data):
     SELECT song_id, title, artist_id, year, duration
     FROM songs_table
     """
-    ).show(5).toDF(*columns)
+    ).toDF(*columns)
 
     # write songs table to parquet files partitioned by year and artist
     songs_table.write.partitionBy("year", "artist_id").parquet(os.path.join(output_data, "songs.parquet"), "overwrite")
 
+    # ARTIST TABLE
+    df.createOrReplaceTempView("artists_table")
+
     # extract columns to create artists table
-    # artists_table =
+    columns = ['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']
+    artists_table = spark.sql(
+        """
+    SELECT artist_id, artist_name, artist_location, artist_latitude, artist_longitude
+    FROM artists_table
+    """).toDF(*columns)
 
     # write artists table to parquet files
-    # artists_table
+    artists_table.write.parquet(os.path.join(output_data, "artists.parquet"), "overwrite")
 
 
 def get_files(filepath):
