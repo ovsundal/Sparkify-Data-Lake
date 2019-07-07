@@ -96,26 +96,39 @@ def process_log_data(spark, input_data, output_data):
     users_table.write.parquet(os.path.join(output_data, "users.parquet"), "overwrite")
 
     # TIME TABLE
-    df.createOrReplaceTempView("time_table")
     # create timestamp column from original timestamp column
-    get_timestamp = udf(lambda x: datetime.fromtimestamp(x / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
-    df = df.withColumn('timestamp', get_timestamp(df['ts'])).show(5)
+    get_start_time = udf(lambda x: datetime.fromtimestamp(x / 1000.0).strftime('%Y-%m-%d %H:%M:%S'))
+    get_hour = udf(lambda x: datetime.fromtimestamp(x / 1000.0).hour)
+    get_day = udf(lambda x: datetime.fromtimestamp(x / 1000.0).day)
+    get_week = udf(lambda x: datetime.fromtimestamp(x / 1000.0).strftime('%W'))
+    get_month = udf(lambda x: datetime.fromtimestamp(x / 1000.0).month)
+    get_year = udf(lambda x: datetime.fromtimestamp(x / 1000.0).year)
+    get_weekday = udf(lambda x: datetime.fromtimestamp(x / 1000.0).strftime('%A'))
 
-    # create datetime column from original timestamp column
-    # get_datetime = udf()
-#     df =
-#
-#     # extract columns to create time table
+    df = df.withColumn('start_time', get_start_time(df['ts']))
+    df = df.withColumn('hour', get_hour(df['ts']))
+    df = df.withColumn('day', get_day(df['ts']))
+    df = df.withColumn('week', get_week(df['ts']))
+    df = df.withColumn('month', get_month(df['ts']))
+    df = df.withColumn('year', get_year(df['ts']))
+    df = df.withColumn('week_day', get_weekday(df['ts']))
+
+    df.createOrReplaceTempView("time_table")
+    df.printSchema()
+
+    columns = ['start_time', 'hour', 'day', 'week', 'month', 'year', 'week_day']
+
+    # extract columns to create time table
     time_table = spark.sql(
 """
-    SELECT timestamp
+    SELECT start_time, hour, day, week, month, year, week_day
     FROM time_table
-""").show(5)
-#
-#     # write time table to parquet files partitioned by year and month
-#     time_table
-#
-#     # read in song data to use for songplays table
+""").toDF(*columns)
+
+    # write time table to parquet files partitioned by year and month
+    time_table.write.partitionBy("year", "month").parquet(os.path.join(output_data, "time.parquet"), "overwrite")
+
+    # read in song data to use for songplays table
 #     song_df =
 #
 #     # extract columns from joined song and log datasets to create songplays table
