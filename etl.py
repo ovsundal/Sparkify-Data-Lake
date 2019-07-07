@@ -1,7 +1,7 @@
 import configparser
 import os
 import glob
-
+import pyspark.sql.functions as F
 from datetime import datetime
 from pyspark.sql import SparkSession
 import pandas as pd
@@ -129,6 +129,23 @@ def process_log_data(spark, input_data, output_data):
     time_table.write.partitionBy("year", "month").parquet(os.path.join(output_data, "time.parquet"), "overwrite")
 
     # read in song data to use for songplays table
+
+    df = df.withColumn('songplay_id', F.monotonically_increasing_id())
+
+    df.createOrReplaceTempView("songplays_table")
+
+# todo: get song_id and artist_id from song table
+
+    # extract columns to create time table
+    songplays_table = spark.sql(
+        """
+            SELECT songplay_id, start_time, userId, level, sessionId, location, userAgent
+            FROM songplays_table
+        """).show(5)
+
+
+
+
 #     song_df =
 #
 #     # extract columns from joined song and log datasets to create songplays table
