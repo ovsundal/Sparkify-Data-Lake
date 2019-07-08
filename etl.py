@@ -36,7 +36,7 @@ def process_song_data(spark, input_data, output_data):
     song_data = get_files('data/song_data')
 
     # read song data file
-    df = spark.read.json(input_song_data)
+    df = spark.read.json(input_song_data).drop_duplicates()
     df.printSchema()
 
     # SONGS TABLE
@@ -94,7 +94,7 @@ def process_log_data(spark, input_data, output_data):
     log_data = get_files('data/log_data')
 
     # read log data file
-    df = spark.read.json(input_log_data)
+    df = spark.read.json(input_log_data).drop_duplicates()
     df.printSchema()
     # filter by actions for song plays
     df = df[df['page'] == 'NextSong']
@@ -153,8 +153,9 @@ def process_log_data(spark, input_data, output_data):
     df.createOrReplaceTempView("songplays_table")
 
     # get song df
+    # song_data = get_files('data/song_data')
     song_data = input_song_data
-    song_df = spark.read.json(song_data)
+    song_df = spark.read.json(song_data).drop_duplicates()
     song_df.createOrReplaceTempView("songs_table")
 
     columns = ['songplay_id', 'start_time', 'userId', 'level', 'sessionId', 'location', 'userAgent', 'year', 'month',
