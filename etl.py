@@ -130,29 +130,29 @@ def process_log_data(spark, input_data, output_data):
 
     # read in song data to use for songplays table
 
+    # add autoincrement column
     df = df.withColumn('songplay_id', F.monotonically_increasing_id())
-
     df.createOrReplaceTempView("songplays_table")
 
-# todo: get song_id and artist_id from song table
+    # get song df
+    song_data = get_files('data/song_data')
+    song_df = spark.read.json(song_data)
+    song_df.createOrReplaceTempView("songs_table")
+
+    columns = ['songplay_id', 'start_time', 'userId', 'level', 'sessionId', 'location', 'userAgent', 'year', 'month',
+               'length', 'song_id', 'artist_id', 'title', 'artist_name', 'duration']
 
     # extract columns to create time table
     songplays_table = spark.sql(
         """
-            SELECT songplay_id, start_time, userId, level, sessionId, location, userAgent
-            FROM songplays_table
-        """).show(5)
+            SELECT sp.songplay_id, sp.start_time, sp.userId, sp.level, sp.sessionId, sp.location, sp.userAgent, sp.year, 
+            sp.month, sp.length, s.song_id, s.artist_id, s.title, s.artist_name, s.duration
+            FROM songplays_table AS sp 
+            JOIN songs_table AS s ON sp.song = s.title AND sp.artist = s.artist_name AND sp.length = s.duration
+        """).toDF(*columns)
 
-
-
-
-#     song_df =
-#
-#     # extract columns from joined song and log datasets to create songplays table
-#     songplays_table =
-#
-#     # write songplays table to parquet files partitioned by year and month
-#     songplays_table
+    # write songplays table to parquet files partitioned by year and month
+    songplays_table.write.partitionBy("year", "month").parquet(os.path.join(output_data, "songplays.parquet"), "overwrite")
 
 
 def main():
