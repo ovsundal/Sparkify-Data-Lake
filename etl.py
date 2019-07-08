@@ -4,9 +4,6 @@ import glob
 import pyspark.sql.functions as F
 from datetime import datetime
 from pyspark.sql import SparkSession
-import pandas as pd
-import shutil
-
 from pyspark.sql.functions import udf
 
 config = configparser.ConfigParser()
@@ -26,10 +23,13 @@ def create_spark_session():
 
 def process_song_data(spark, input_data, output_data):
 
+    input_song_data = input_data + 'song_data'
+
     # get filepath to song data file
     song_data = get_files('data/song_data')
+
     # read song data file
-    df = spark.read.json(song_data)
+    df = spark.read.json(input_song_data)
     df.printSchema()
 
     # SONGS TABLE
@@ -72,11 +72,15 @@ def get_files(filepath):
 
 
 def process_log_data(spark, input_data, output_data):
+
+    input_song_data = input_data + 'song_data'
+    input_log_data = input_data + 'log_data'
+
     # get filepath to log data file
     log_data = get_files('data/log_data')
 
     # read log data file
-    df = spark.read.json(log_data)
+    df = spark.read.json(input_log_data)
     df.printSchema()
     # filter by actions for song plays
     df = df[df['page'] == 'NextSong']
@@ -135,7 +139,8 @@ def process_log_data(spark, input_data, output_data):
     df.createOrReplaceTempView("songplays_table")
 
     # get song df
-    song_data = get_files('data/song_data')
+    # song_data = get_files('data/song_data')
+    song_data = input_song_data
     song_df = spark.read.json(song_data)
     song_df.createOrReplaceTempView("songs_table")
 
@@ -158,9 +163,9 @@ def process_log_data(spark, input_data, output_data):
 def main():
     spark = create_spark_session()
     input_data = "s3a://udacity-dend/"
-    output_data = ""
+    output_data = config.get("AWS", 'AWS_BUCKET')
 
-    # process_song_data(spark, input_data, output_data)
+    process_song_data(spark, input_data, output_data)
     process_log_data(spark, input_data, output_data)
 
 
