@@ -14,6 +14,10 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = config.get("AWS", 'AWS_SECRET_ACCESS_KEY')
 
 
 def create_spark_session():
+    """
+    setup and launches a spark session
+    :return:
+    """
     spark = SparkSession \
         .builder \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
@@ -22,7 +26,10 @@ def create_spark_session():
 
 
 def process_song_data(spark, input_data, output_data):
-
+    """
+    pulls song data from udacity s3 bucket, and writes to another bucket as a parquet file
+    :rtype: object
+    """
     input_song_data = input_data + 'song_data'
 
     # get filepath to song data file
@@ -63,6 +70,10 @@ def process_song_data(spark, input_data, output_data):
 
 
 def get_files(filepath):
+    """
+    Extracts all files from a file path
+    :rtype: object
+    """
     all_files = []
     for root, dirs, files in os.walk(filepath):
         files = glob.glob(os.path.join(root, '*.json'))
@@ -72,7 +83,10 @@ def get_files(filepath):
 
 
 def process_log_data(spark, input_data, output_data):
-
+    """
+    pulls log data from udacity s3 bucket, and writes to another bucket as a parquet file
+    :rtype: object
+    """
     input_song_data = input_data + 'song_data'
     input_log_data = input_data + 'log_data'
 
@@ -139,7 +153,6 @@ def process_log_data(spark, input_data, output_data):
     df.createOrReplaceTempView("songplays_table")
 
     # get song df
-    # song_data = get_files('data/song_data')
     song_data = input_song_data
     song_df = spark.read.json(song_data)
     song_df.createOrReplaceTempView("songs_table")
